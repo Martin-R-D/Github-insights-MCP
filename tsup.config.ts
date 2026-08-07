@@ -1,8 +1,8 @@
-import { copyFileSync } from "node:fs";
+import { copyFileSync, mkdirSync } from "node:fs";
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts"],
+  entry: ["src/index.ts", "src/bin/sync.ts"],
   format: ["esm"],
   target: "node20",
   platform: "node",
@@ -17,9 +17,12 @@ export default defineConfig({
   banner: {
     js: "#!/usr/bin/env node",
   },
-  // client.ts reads schema.sql relative to its own file at runtime. In the
-  // bundle that resolves to dist/, so copy the SQL there after each build.
+  // client.ts reads schema.sql relative to its own bundled file at runtime.
+  // Each entry bundles client.ts into its own directory, so place the SQL next
+  // to every emitted entry (dist/ for index.js, dist/bin/ for sync.js).
   async onSuccess() {
     copyFileSync("src/db/schema.sql", "dist/schema.sql");
+    mkdirSync("dist/bin", { recursive: true });
+    copyFileSync("src/db/schema.sql", "dist/bin/schema.sql");
   },
 });

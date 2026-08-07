@@ -17,6 +17,7 @@
     "dev": "tsup --watch --onSuccess \"node dist/index.js\"",
     "build": "tsup",
     "start": "node dist/index.js",
+    "sync": "node dist/bin/sync.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
