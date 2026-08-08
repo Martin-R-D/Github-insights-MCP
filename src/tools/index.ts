@@ -3,6 +3,7 @@ import { pingTool } from "./ping.js";
 import { syncGithubDataTool } from "./sync_github_data.js";
 import { getAllReposTool } from "./get_all_repos.js";
 import { getCommitActivityTool } from "./get_commit_activity.js";
+import { getCommitPatternsTool } from "./get_commit_patterns.js";
 
 /**
  * The tool registry. Add new tools to this array; `src/index.ts` builds the
@@ -13,6 +14,7 @@ export const tools: ToolDefinition[] = [
   syncGithubDataTool,
   getAllReposTool,
   getCommitActivityTool,
+  getCommitPatternsTool,
 ];
 
 /** Lookup map by tool name for O(1) dispatch. */
