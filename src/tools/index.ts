@@ -4,6 +4,7 @@ import { syncGithubDataTool } from "./sync_github_data.js";
 import { getAllReposTool } from "./get_all_repos.js";
 import { getCommitActivityTool } from "./get_commit_activity.js";
 import { getCommitPatternsTool } from "./get_commit_patterns.js";
+import { getRepoStatsTool } from "./get_repo_stats.js";
 
 /**
  * The tool registry. Add new tools to this array; `src/index.ts` builds the
@@ -15,6 +16,7 @@ export const tools: ToolDefinition[] = [
   getAllReposTool,
   getCommitActivityTool,
   getCommitPatternsTool,
+  getRepoStatsTool,
 ];
 
 /** Lookup map by tool name for O(1) dispatch. */
