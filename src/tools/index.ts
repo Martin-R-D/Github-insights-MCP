@@ -8,6 +8,8 @@ import { getRepoStatsTool } from "./get_repo_stats.js";
 import { getStarsReceivedTool } from "./get_stars_received.js";
 import { getLanguageBreakdownTool } from "./get_language_breakdown.js";
 import { getContributionSummaryTool } from "./get_contribution_summary.js";
+import { compareReposTool } from "./compare_repos.js";
+import { getOpenItemsTool } from "./get_open_items.js";
 
 /**
  * The tool registry. Add new tools to this array; `src/index.ts` builds the
@@ -23,6 +25,8 @@ export const tools: ToolDefinition[] = [
   getStarsReceivedTool,
   getLanguageBreakdownTool,
   getContributionSummaryTool,
+  compareReposTool,
+  getOpenItemsTool,
 ];
 
 /** Lookup map by tool name for O(1) dispatch. */

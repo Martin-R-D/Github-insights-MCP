@@ -1,5 +1,7 @@
 import { formatInTimeZone } from "date-fns-tz";
 import { db } from "../db/client.js";
+import { ToolError } from "../utils/errors.js";
+import type { RepoRow } from "../db/types.js";
 
 /**
  * Internal helpers shared by the insight tools (not itself a registered tool —
@@ -68,6 +70,42 @@ export function resolveRepoIds(repo: string | undefined): number[] | null {
     .prepare("SELECT id FROM repos WHERE name = ? OR name LIKE ? OR full_name LIKE ? ORDER BY full_name")
     .all(repo, like, like) as { id: number }[];
   return rows.map((r) => r.id);
+}
+
+/**
+ * Resolve a repo by exact full_name, then exact name, then fuzzy LIKE. Throws a
+ * ToolError listing candidates when a fuzzy match is ambiguous, or not_found
+ * when nothing matches.
+ */
+export function resolveRepoRow(input: string): RepoRow {
+  const byFull = db.prepare("SELECT * FROM repos WHERE full_name = ?").get(input) as RepoRow | undefined;
+  if (byFull) return byFull;
+
+  const exactName = db.prepare("SELECT * FROM repos WHERE name = ?").all(input) as RepoRow[];
+  if (exactName.length === 1) return exactName[0]!;
+  if (exactName.length > 1) throw ambiguousRepo(input, exactName);
+
+  const like = `%${input}%`;
+  const fuzzy = db
+    .prepare("SELECT * FROM repos WHERE name LIKE ? OR full_name LIKE ? ORDER BY full_name")
+    .all(like, like) as RepoRow[];
+  if (fuzzy.length === 1) return fuzzy[0]!;
+  if (fuzzy.length > 1) throw ambiguousRepo(input, fuzzy);
+
+  throw new ToolError(
+    "not_found",
+    `No repo matching "${input}" in the local store.`,
+    "Run sync_github_data first, or check the name/spelling.",
+  );
+}
+
+export function ambiguousRepo(input: string, rows: RepoRow[]): ToolError {
+  const names = rows.map((r) => r.full_name ?? r.name ?? String(r.id)).slice(0, 20);
+  return new ToolError(
+    "invalid_input",
+    `"${input}" matches ${rows.length} repos: ${names.join(", ")}.`,
+    "Pass an exact full_name (owner/name) to disambiguate.",
+  );
 }
 
 /** Build a `repo_id IN (...)` fragment (with leading AND) for a resolved set. */

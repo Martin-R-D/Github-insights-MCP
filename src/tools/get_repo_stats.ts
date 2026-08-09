@@ -12,8 +12,7 @@ import {
   syncStargazers,
 } from "../services/sync.js";
 import { loadConfig } from "../config.js";
-import { ToolError } from "../utils/errors.js";
-import type { RepoRow } from "../db/types.js";
+import { resolveRepoRow } from "./_shared.js";
 
 /**
  * MCP tool: a full stats dashboard for a single repo — profile, social growth,
@@ -54,38 +53,6 @@ function round1(n: number): number {
   return Math.round(n * 10) / 10;
 }
 
-/** Resolve a repo by exact full_name, exact name, then fuzzy LIKE. */
-function resolveRepo(input: string): RepoRow {
-  const byFull = db.prepare("SELECT * FROM repos WHERE full_name = ?").get(input) as RepoRow | undefined;
-  if (byFull) return byFull;
-
-  const exactName = db.prepare("SELECT * FROM repos WHERE name = ?").all(input) as RepoRow[];
-  if (exactName.length === 1) return exactName[0]!;
-  if (exactName.length > 1) throw ambiguous(input, exactName);
-
-  const like = `%${input}%`;
-  const fuzzy = db
-    .prepare("SELECT * FROM repos WHERE name LIKE ? OR full_name LIKE ? ORDER BY full_name")
-    .all(like, like) as RepoRow[];
-  if (fuzzy.length === 1) return fuzzy[0]!;
-  if (fuzzy.length > 1) throw ambiguous(input, fuzzy);
-
-  throw new ToolError(
-    "not_found",
-    `No repo matching "${input}" in the local store.`,
-    "Run sync_github_data first, or check the name/spelling.",
-  );
-}
-
-function ambiguous(input: string, rows: RepoRow[]): ToolError {
-  const names = rows.map((r) => r.full_name ?? r.name ?? String(r.id)).slice(0, 20);
-  return new ToolError(
-    "invalid_input",
-    `"${input}" matches ${rows.length} repos: ${names.join(", ")}.`,
-    "Pass an exact full_name (owner/name) to disambiguate.",
-  );
-}
-
 /** Sync the repo's resources if any are missing or older than the threshold. */
 async function ensureFresh(repoId: number, startIso: string): Promise<boolean> {
   const resources = [`commits:${repoId}`, `languages:${repoId}`, `stargazers:${repoId}`, `pulls_issues:${repoId}`];
@@ -114,7 +81,7 @@ export const getRepoStatsTool = defineTool({
   inputSchema,
   handler: async (args: Input) => {
     const { TIMEZONE: tz } = loadConfig();
-    const repo = resolveRepo(args.repo);
+    const repo = resolveRepoRow(args.repo);
     const id = repo.id;
 
     const endIso = formatInTimeZone(new Date(), tz, "yyyy-MM-dd");

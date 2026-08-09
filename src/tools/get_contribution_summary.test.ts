@@ -39,7 +39,7 @@ async function call(args: Record<string, unknown> = {}) {
       period: { days: number; start: string; end: string };
       current: { commits: number; contributions_total: number; prs_opened: number };
       previous: { commits: number } | null;
-      deltas: Record<string, { abs: number; percent: number | null; direction: string }> | null;
+      deltas: { commits: { abs: number; percent: number | null; direction: string } } | null;
       trajectory: { confidence: string };
       weekly_trend: unknown[];
     };
