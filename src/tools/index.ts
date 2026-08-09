@@ -5,6 +5,9 @@ import { getAllReposTool } from "./get_all_repos.js";
 import { getCommitActivityTool } from "./get_commit_activity.js";
 import { getCommitPatternsTool } from "./get_commit_patterns.js";
 import { getRepoStatsTool } from "./get_repo_stats.js";
+import { getStarsReceivedTool } from "./get_stars_received.js";
+import { getLanguageBreakdownTool } from "./get_language_breakdown.js";
+import { getContributionSummaryTool } from "./get_contribution_summary.js";
 
 /**
  * The tool registry. Add new tools to this array; `src/index.ts` builds the
@@ -17,6 +20,9 @@ export const tools: ToolDefinition[] = [
   getCommitActivityTool,
   getCommitPatternsTool,
   getRepoStatsTool,
+  getStarsReceivedTool,
+  getLanguageBreakdownTool,
+  getContributionSummaryTool,
 ];
 
 /** Lookup map by tool name for O(1) dispatch. */
