@@ -48,7 +48,7 @@ interface PrRow {
   author_login: string | null;
   created_at: string | null;
 }
-interface IssueRow extends PrRow {}
+type IssueRow = PrRow;
 
 // Priority for needs_attention ordering (lower = more urgent).
 const PRIORITY = { security: 0, bug: 1, stale_pr: 2, external_issue: 3 } as const;

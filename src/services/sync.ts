@@ -329,6 +329,8 @@ export interface SyncAllOptions {
   concurrency?: number;
   /** Limit to a single repo by full_name (owner/name) or bare name. */
   repo?: string;
+  /** Progress callback invoked after each repo finishes (and once at start). */
+  onProgress?: (done: number, total: number) => void;
 }
 
 export interface SyncReport {
@@ -358,7 +360,7 @@ async function pool<T>(items: T[], concurrency: number, worker: (item: T) => Pro
  * failures. Returns a summary report.
  */
 export async function syncAll(options: SyncAllOptions = {}): Promise<SyncReport> {
-  const { full = false, concurrency = 4, repo } = options;
+  const { full = false, concurrency = 4, repo, onProgress } = options;
   const start = Date.now();
   const errors: SyncReport["errors"] = [];
   let commitsAdded = 0;
@@ -368,6 +370,9 @@ export async function syncAll(options: SyncAllOptions = {}): Promise<SyncReport>
   const targets = repo
     ? all.filter((r) => r.full_name === repo || r.name === repo)
     : all;
+
+  let done = 0;
+  onProgress?.(0, targets.length);
 
   await pool(targets, concurrency, async (r) => {
     // Each resource is isolated so one failure doesn't abort the rest.
@@ -395,6 +400,9 @@ export async function syncAll(options: SyncAllOptions = {}): Promise<SyncReport>
     await run("pulls_issues", async () => {
       await syncPullsAndIssues(r.id, { since: full ? isoDaysAgo(BACKFILL_DAYS) : undefined });
     });
+
+    done += 1;
+    onProgress?.(done, targets.length);
   });
 
   try {

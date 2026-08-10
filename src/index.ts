@@ -11,7 +11,10 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { loadConfig } from "./config.js";
 import { tools, toolsByName } from "./tools/index.js";
 import { toToolResult, ToolError } from "./utils/errors.js";
-import { logger } from "./utils/logger.js";
+import { logger, redactSecret } from "./utils/logger.js";
+import { closeDb } from "./db/client.js";
+import { overScopedWarning, TokenVerificationError, verifyToken } from "./github/verify.js";
+import { firstRunActive, startInitialSyncIfEmpty, stillSyncingResponse } from "./services/bootstrap.js";
 
 const SERVER_NAME = "github-insights";
 const SERVER_VERSION = "0.1.0";
@@ -48,7 +51,38 @@ function asToolContent(payload: unknown) {
 async function main(): Promise<void> {
   // Validate configuration up front so misconfiguration fails fast with a
   // readable message before we ever touch the transport.
-  loadConfig();
+  const config = loadConfig();
+  // Register the token for redaction before any request can log it.
+  redactSecret(config.GITHUB_TOKEN);
+
+  // Verify the token by calling /user BEFORE the MCP handshake, so a bad token
+  // surfaces as a real reason in the client instead of silent tool failures.
+  try {
+    const info = await verifyToken();
+    logger.info("GitHub token verified", { login: info.login, classic: info.classic });
+    const warning = overScopedWarning(info);
+    if (warning) logger.warn(warning);
+  } catch (err) {
+    if (err instanceof TokenVerificationError) {
+      const guidance: Record<string, string> = {
+        bad_token: "Set a valid GITHUB_TOKEN (a classic PAT with scopes: repo, read:user, read:org).",
+        forbidden: "Check the token's scopes and authorize it for your org's SSO if required.",
+        network: "Check your internet connection and any proxy/firewall, then retry.",
+        unknown: "Retry; if it persists, regenerate the token.",
+      };
+      process.stderr.write(
+        `\n[github-insights] Startup aborted: ${err.message}\n  -> ${guidance[err.kind] ?? ""}\n\n`,
+      );
+      closeDb();
+      process.exitCode = 1;
+      return;
+    }
+    throw err;
+  }
+
+  // First-run: if the DB is empty, kick off an initial sync in the background.
+  // Tools return a friendly "still syncing" response until it finishes.
+  startInitialSyncIfEmpty();
 
   const server = new Server(
     { name: SERVER_NAME, version: SERVER_VERSION },
@@ -72,6 +106,12 @@ async function main(): Promise<void> {
     if (!tool) {
       // Unknown tool: return a proper MCP error rather than crashing.
       throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`);
+    }
+
+    // While the first-run sync is in flight, don't return misleading empty
+    // data — tell the caller we're still setting up.
+    if (firstRunActive()) {
+      return asToolContent(stillSyncingResponse());
     }
 
     try {
@@ -100,17 +140,25 @@ async function main(): Promise<void> {
     tools: tools.map((t) => t.name),
   });
 
-  // Graceful shutdown so the transport closes cleanly on Ctrl-C / SIGTERM.
+  // Graceful shutdown: close the transport, checkpoint the WAL and close the DB.
+  let shuttingDown = false;
   const shutdown = async (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     logger.info(`Received ${signal}, shutting down`);
     try {
       await server.close();
+    } catch {
+      // ignore
     } finally {
+      closeDb();
       process.exit(0);
     }
   };
   process.on("SIGINT", () => void shutdown("SIGINT"));
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
+  // Last-resort checkpoint if the process exits for another reason.
+  process.on("exit", () => closeDb());
 }
 
 main().catch((err) => {

@@ -9,7 +9,6 @@ import {
   dayDiff,
   linreg,
   mondayOf,
-  pct,
   repoInClause,
   resolveRepoIds,
   todayInTz,

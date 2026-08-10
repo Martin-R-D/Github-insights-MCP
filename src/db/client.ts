@@ -101,3 +101,21 @@ export function withTransaction<T>(fn: (database: DB) => T): T {
   const txn = db.transaction(fn);
   return txn(db);
 }
+
+/**
+ * Cleanly close the database: checkpoint the WAL back into the main file
+ * (TRUNCATE removes the -wal/-shm sidecars) then close the connection. Safe to
+ * call more than once. Used on graceful shutdown.
+ */
+export function closeDb(database: DB = db): void {
+  try {
+    if (database.open) database.pragma("wal_checkpoint(TRUNCATE)");
+  } catch {
+    // best-effort checkpoint
+  }
+  try {
+    if (database.open) database.close();
+  } catch {
+    // already closed
+  }
+}

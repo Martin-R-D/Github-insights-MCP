@@ -22,7 +22,6 @@ import { resolveRepoRow } from "./_shared.js";
 
 const DAY_MS = 86_400_000;
 const SYNC_STALE_MS = 15 * 60 * 1000;
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const inputSchema = z
   .object({

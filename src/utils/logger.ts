@@ -20,6 +20,32 @@ function isLogLevel(value: string): value is LogLevel {
   return value === "debug" || value === "info" || value === "warn" || value === "error";
 }
 
+// --- Secret redaction ---------------------------------------------------------
+// Registered secrets (e.g. the GitHub token) are scrubbed from every log line,
+// including error messages and stack traces. We also scrub anything that *looks*
+// like a GitHub token as defense-in-depth, in case a secret was never
+// registered.
+const REDACTED = "***REDACTED***";
+const secrets = new Set<string>();
+const TOKEN_PATTERNS: RegExp[] = [
+  /gh[posur]_[A-Za-z0-9]{20,}/g, // ghp_, gho_, ghu_, ghs_, ghr_ classic/app tokens
+  /github_pat_[A-Za-z0-9_]{20,}/g, // fine-grained PATs
+];
+
+/** Register a secret so it is redacted from all subsequent log output. */
+export function redactSecret(secret: string | undefined | null): void {
+  if (secret && secret.length >= 8) secrets.add(secret);
+}
+
+function scrub(line: string): string {
+  let out = line;
+  for (const s of secrets) {
+    if (out.includes(s)) out = out.split(s).join(REDACTED);
+  }
+  for (const re of TOKEN_PATTERNS) out = out.replace(re, REDACTED);
+  return out;
+}
+
 // Read the threshold directly from the environment so the logger is usable
 // before (and independently of) config validation. Defaults to "info".
 function currentThreshold(): number {
@@ -47,7 +73,7 @@ function write(level: LogLevel, message: string, meta?: unknown): void {
     line = JSON.stringify({ ts: record.ts, level, msg: message, meta: String(meta) });
   }
 
-  process.stderr.write(line + "\n");
+  process.stderr.write(scrub(line) + "\n");
 }
 
 export const logger = {
