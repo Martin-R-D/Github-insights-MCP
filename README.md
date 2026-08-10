@@ -1,4 +1,4 @@
-# github-insights-mcp
+# Github-insights-mcp
 
 An [MCP](https://modelcontextprotocol.io) server that gives Claude (and other
 MCP clients) rich insights about your GitHub activity: commit patterns, streaks,
