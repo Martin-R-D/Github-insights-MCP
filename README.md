@@ -14,35 +14,40 @@ historical stars/forks/issues trend that GitHub's API does **not** retain.
 
 ## 1. Get a GitHub Personal Access Token (PAT)
 
-This server needs read access to your profile, repositories, and organizations.
-A **classic** PAT with the scopes below is the simplest option.
+This server only ever **reads** your GitHub data, so a read-only token is the
+safest choice.
 
-1. Open <https://github.com/settings/tokens> → **Generate new token → classic**.
-2. Name it (e.g. `github-insights-mcp`) and pick an expiration.
-3. Select exactly these scopes:
-   - **`repo`** — read repository data (commits, PRs, issues), including private repos.
-   - **`read:user`** — read your profile and activity.
-   - **`read:org`** — read org membership and org-owned repositories.
-4. **Generate token** and copy it (GitHub shows it once).
+### Recommended: fine-grained token (read-only)
+
+1. Open <https://github.com/settings/personal-access-tokens> → **Generate new token**.
+2. Name it (e.g. `github-insights-mcp`), pick an expiration, set the resource owner.
+3. Under **Repository access**, choose **All repositories** (or select specific ones).
+4. Under **Repository permissions**, set these to **Read-only**:
+   - **Contents** — commits and branch data.
+   - **Metadata** — required; repo listing, stars, forks, languages.
+   - **Issues** — issue data.
+   - **Pull requests** — PR data.
+5. **Generate token** and copy it (GitHub shows it once).
+
+> If the contribution-calendar/trend features come back empty, add **Account →
+> Profile** read access. It's optional and only needed for private-repo
+> contribution totals.
+
+### Alternative: classic PAT
+
+A classic PAT with `repo`, `read:user`, `read:org` also works, but `repo` grants
+write access too, so the fine-grained read-only token above is preferred.
 
 > The server verifies the token on startup and **warns** if a classic PAT has
-> more scopes than needed. Prefer a fine-grained token? Grant read-only
-> Contents, Metadata, Pull requests and Issues on the target repos, plus account
-> read for profile/org. The token is never logged and is redacted from any error
-> output.
+> more scopes than needed. The token is never logged and is redacted from any
+> error output.
 
 If your organization uses **SSO**, click **Configure SSO / Authorize** next to
 the token so it can read org repos.
 
 ---
 
-## 2. Install & configure
-
-### Option A — via `npx` (recommended for Claude Desktop)
-
-No local clone needed; Claude Desktop launches it on demand (see below).
-
-### Option B — from source
+## 2. Install from source
 
 ```bash
 git clone <this-repo> && cd github-insights-mcp
@@ -56,10 +61,10 @@ npm start                 # starts the stdio server
 
 | Variable          | Required | Default            | Description                                              |
 | ----------------- | -------- | ------------------ | -------------------------------------------------------- |
-| `GITHUB_TOKEN`    | yes      | —                  | Classic PAT with `repo, read:user, read:org`.            |
+| `GITHUB_TOKEN`    | yes      | —                  | Read-only fine-grained PAT (or classic `repo, read:user, read:org`). |
 | `GITHUB_USERNAME` | yes      | —                  | The GitHub login to analyze.                             |
 | `TIMEZONE`        | no       | `UTC`              | IANA zone, e.g. `America/New_York`, `Europe/Sofia`.      |
-| `DB_PATH`         | no       | `./data/github.db` | Path to the local SQLite cache.                          |
+| `DB_PATH`         | no       | `./data/github.db` | Path to the local SQLite cache. Use an **absolute** path on Windows (see note below). |
 | `LOG_LEVEL`       | no       | `info`             | `debug` \| `info` \| `warn` \| `error`.                  |
 
 ---
@@ -75,31 +80,25 @@ Desktop:
 {
   "mcpServers": {
     "github-insights": {
-      "command": "npx",
-      "args": ["-y", "github-insights-mcp"],
+      "command": "node",
+      "args": ["/absolute/path/to/github-insights-mcp/dist/index.js"],
       "env": {
         "GITHUB_TOKEN": "...",
         "GITHUB_USERNAME": "...",
-        "TIMEZONE": "America/New_York"
+        "TIMEZONE": "America/New_York",
+        "DB_PATH": "/absolute/path/to/github-insights-mcp/data/github.db"
       }
     }
   }
 }
 ```
 
-If you installed from source, use your built binary instead:
-
-```json
-{
-  "mcpServers": {
-    "github-insights": {
-      "command": "node",
-      "args": ["/absolute/path/to/github-insights-mcp/dist/index.js"],
-      "env": { "GITHUB_TOKEN": "...", "GITHUB_USERNAME": "...", "TIMEZONE": "America/New_York" }
-    }
-  }
-}
-```
+> **Windows note:** Set `DB_PATH` to an absolute path inside the project.
+> Claude Desktop launches the server from a system directory, so the default
+> relative `./data/github.db` resolves to a protected location (e.g.
+> `C:\Windows\system32\data`) and fails with an `EPERM: mkdir` error. An
+> absolute path such as `D:\\Github-insights-MCP\\data\\github.db` avoids this.
+> Use double backslashes in JSON.
 
 **First run:** the DB starts empty, so the server kicks off an initial sync in
 the background. Until it finishes, every tool replies with a friendly
@@ -179,12 +178,16 @@ Load it with `launchctl load ~/Library/LaunchAgents/com.github-insights.sync.pli
 
 Create a Basic Task → Daily → Action "Start a program":
 `node.exe` with arguments `C:\path\to\github-insights-mcp\dist\scripts\sync-cron.js`,
-and set the three env vars in the task (or via a wrapper `.cmd`).
+and set the three env vars (plus an absolute `DB_PATH`) in the task or via a
+wrapper `.cmd`.
 
 ---
 
 ## 6. Troubleshooting
 
+- **`EPERM: mkdir` on startup (Windows).** The DB path is resolving to a
+  protected system folder. Set an absolute `DB_PATH` inside your project (see the
+  Windows note in section 3).
 - **Empty results right after adding the server.** The first sync runs in the
   background; tools reply "still syncing, N repos done" until it completes. Wait
   a minute and retry. You can also run `npm run sync` once manually.
@@ -192,11 +195,10 @@ and set the three env vars in the task (or via a wrapper `.cmd`).
   If you're near the limit it serves cached data (flagged `stale`) rather than
   failing. Authenticated REST is 5,000 requests/hour; a full backfill of many
   repos can approach that — run it once, then rely on incremental daily syncs.
-- **Private repos missing.** Your token needs the `repo` scope (not just
-  `public_repo`). Regenerate the PAT with `repo` if needed.
+- **Private repos missing.** Your fine-grained token needs Contents + Metadata
+  read on those repos (or the classic `repo` scope, not just `public_repo`).
 - **Org repos missing / 403 on startup.** If your org enforces **SSO**, open the
-  token settings and **Authorize** the token for that organization. A 403 at
-  startup usually means SSO authorization or a missing `read:org` scope.
+  token settings and **Authorize** the token for that organization.
 - **"Bad credentials" / server won't start.** The token is invalid, expired, or
   revoked. The server exits with a clear stderr message before connecting, so
   Claude Desktop shows the reason — set a valid `GITHUB_TOKEN`.
