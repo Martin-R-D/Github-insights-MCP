@@ -47,7 +47,13 @@ the token so it can read org repos.
 
 ---
 
-## 2. Install from source
+## 2. Install
+
+### Option A — via npx (recommended)
+
+No clone or build needed — just add the config block from Section 3.
+
+### Option B — from source
 
 ```bash
 git clone https://github.com/Martin-R-D/Github-insights-MCP.git && cd Github-insights-MCP
@@ -76,6 +82,31 @@ Add this block to your `claude_desktop_config.json`
 Windows: `%APPDATA%\Claude\claude_desktop_config.json`), then restart Claude
 Desktop:
 
+**If you installed via npx:**
+
+```json
+{
+  "mcpServers": {
+    "github-insights": {
+      "command": "npx",
+      "args": ["-y", "github-insights-mcp"],
+      "env": {
+        "GITHUB_TOKEN": "...",
+        "GITHUB_USERNAME": "...",
+        "TIMEZONE": "America/New_York",
+        "DB_PATH": "/absolute/path/to/data/github.db"
+      }
+    }
+  }
+}
+```
+
+> **Windows note:** `DB_PATH` is required on Windows since npx runs from a
+> temporary directory. Set it to an absolute path (e.g.
+> `C:\\Users\\you\\github-insights-data\\github.db`).
+
+**If you installed from source:**
+
 ```json
 {
   "mcpServers": {
@@ -88,20 +119,6 @@ Desktop:
         "TIMEZONE": "America/New_York",
         "DB_PATH": "/absolute/path/to/github-insights-mcp/data/github.db"
       }
-    }
-  }
-}
-```
-
-If you installed from source, use your built binary instead:
-
-```json
-{
-  "mcpServers": {
-    "github-insights": {
-      "command": "node",
-      "args": ["/absolute/path/to/github-insights-mcp/dist/index.js"],
-      "env": { "GITHUB_TOKEN": "...", "GITHUB_USERNAME": "...", "TIMEZONE": "America/New_York" }
     }
   }
 }

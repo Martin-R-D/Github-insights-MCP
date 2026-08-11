@@ -7,12 +7,13 @@
     "node": ">=20"
   },
   "bin": {
-    "github-insights-mcp": "./dist/index.js"
+    "github-insights-mcp": "dist/index.js"
   },
   "main": "./dist/index.js",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "dev": "tsup --watch --onSuccess \"node dist/index.js\"",
