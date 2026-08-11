@@ -50,7 +50,7 @@ the token so it can read org repos.
 ## 2. Install from source
 
 ```bash
-git clone <this-repo> && cd github-insights-mcp
+git clone https://github.com/Martin-R-D/Github-insights-MCP.git && cd Github-insights-MCP
 npm install
 cp .env.example .env      # fill in GITHUB_TOKEN and GITHUB_USERNAME
 npm run build
@@ -93,12 +93,19 @@ Desktop:
 }
 ```
 
-> **Windows note:** Set `DB_PATH` to an absolute path inside the project.
-> Claude Desktop launches the server from a system directory, so the default
-> relative `./data/github.db` resolves to a protected location (e.g.
-> `C:\Windows\system32\data`) and fails with an `EPERM: mkdir` error. An
-> absolute path such as `D:\\Github-insights-MCP\\data\\github.db` avoids this.
-> Use double backslashes in JSON.
+If you installed from source, use your built binary instead:
+
+```json
+{
+  "mcpServers": {
+    "github-insights": {
+      "command": "node",
+      "args": ["/absolute/path/to/github-insights-mcp/dist/index.js"],
+      "env": { "GITHUB_TOKEN": "...", "GITHUB_USERNAME": "...", "TIMEZONE": "America/New_York" }
+    }
+  }
+}
+```
 
 **First run:** the DB starts empty, so the server kicks off an initial sync in
 the background. Until it finishes, every tool replies with a friendly
@@ -143,7 +150,7 @@ node dist/scripts/sync-cron.js --full   # occasional full backfill
 
 ```cron
 # Every day at 07:00 — adjust the path and env as needed
-0 7 * * *  cd /path/to/github-insights-mcp && \
+0 7 * * *  cd /path/to/Github-insights-MCP && \
   GITHUB_TOKEN=... GITHUB_USERNAME=... TIMEZONE=America/New_York \
   /usr/bin/node dist/scripts/sync-cron.js >> data/sync.log 2>&1
 ```
@@ -159,7 +166,7 @@ node dist/scripts/sync-cron.js --full   # occasional full backfill
   <key>ProgramArguments</key>
   <array>
     <string>/usr/local/bin/node</string>
-    <string>/path/to/github-insights-mcp/dist/scripts/sync-cron.js</string>
+    <string>/path/to/Github-insights-MCP/dist/scripts/sync-cron.js</string>
   </array>
   <key>EnvironmentVariables</key>
   <dict>
@@ -178,8 +185,7 @@ Load it with `launchctl load ~/Library/LaunchAgents/com.github-insights.sync.pli
 
 Create a Basic Task → Daily → Action "Start a program":
 `node.exe` with arguments `C:\path\to\github-insights-mcp\dist\scripts\sync-cron.js`,
-and set the three env vars (plus an absolute `DB_PATH`) in the task or via a
-wrapper `.cmd`.
+and set the three env vars in the task (or via a wrapper `.cmd`).
 
 ---
 
