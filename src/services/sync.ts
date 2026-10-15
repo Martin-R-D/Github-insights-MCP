@@ -262,7 +262,7 @@ export async function syncPullsAndIssues(
   const since = options.since;
   const keepByCreated = (createdAt: string | null) => !since || (createdAt != null && createdAt >= since);
 
-  const pulls = (await listPullRequests(owner, repo, { state: "all" })).filter((p) =>
+  const pulls = (await listPullRequests(owner, repo, { state: "all", since })).filter((p) =>
     keepByCreated(p.created_at),
   );
   const prRows = pulls.map((p) => ({
@@ -280,7 +280,7 @@ export async function syncPullsAndIssues(
   }));
   bulkUpsertPullRequests(prRows);
 
-  const issues = (await listIssues(owner, repo, { state: "all" })).filter((i) =>
+  const issues = (await listIssues(owner, repo, { state: "all", since })).filter((i) =>
     keepByCreated(i.created_at),
   );
   const issueRows = issues.map((i) => ({
@@ -337,6 +337,7 @@ export interface SyncReport {
   reposSynced: number;
   commitsAdded: number;
   starsAdded: number;
+  snapshotRepos: number;
   errors: { repo: string; resource: string; message: string }[];
   durationMs: number;
   rateLimitRemaining: number | null;
@@ -405,8 +406,9 @@ export async function syncAll(options: SyncAllOptions = {}): Promise<SyncReport>
     onProgress?.(done, targets.length);
   });
 
+  let snapshotRepos = 0;
   try {
-    snapshotToday();
+    snapshotRepos = snapshotToday();
   } catch (err) {
     errors.push({ repo: "(all)", resource: "snapshot", message: err instanceof Error ? err.message : String(err) });
   }
@@ -415,6 +417,7 @@ export async function syncAll(options: SyncAllOptions = {}): Promise<SyncReport>
     reposSynced: targets.length,
     commitsAdded,
     starsAdded,
+    snapshotRepos,
     errors,
     durationMs: Date.now() - start,
     rateLimitRemaining: getRateLimit().remaining,

@@ -36,7 +36,7 @@ interface RepoMetrics {
   age_days: number | null;
   contributors: number;
   size_kb: number;
-  commits_per_month: number;
+  commits_per_month_lifetime: number;
   stars_per_month_since_creation: number;
 }
 
@@ -99,7 +99,7 @@ function computeMetrics(repo: RepoRow, startIso: string, endIso: string, nowMs: 
     age_days: ageDays,
     contributors,
     size_kb: repo.size_kb ?? 0,
-    commits_per_month: Math.round((allTime / ageMonths) * 10) / 10,
+    commits_per_month_lifetime: Math.round((allTime / ageMonths) * 10) / 10,
     stars_per_month_since_creation: Math.round(((repo.stars ?? 0) / ageMonths) * 10) / 10,
   };
 }
@@ -114,7 +114,7 @@ const METRICS: { key: keyof RepoMetrics; direction: "high" | "low" }[] = [
   { key: "active_days", direction: "high" },
   { key: "merged_prs_in_period", direction: "high" },
   { key: "contributors", direction: "high" },
-  { key: "commits_per_month", direction: "high" },
+  { key: "commits_per_month_lifetime", direction: "high" },
   { key: "stars_per_month_since_creation", direction: "high" },
   { key: "last_commit_days_ago", direction: "low" },
 ];

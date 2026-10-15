@@ -155,28 +155,30 @@ export function listStargazersWithTimestamps(owner: string, repo: string, maxPag
 
 export interface ListPullsParams {
   state?: "open" | "closed" | "all";
+  since?: string;
   maxPages?: number;
 }
 
 export function listPullRequests(owner: string, repo: string, params: ListPullsParams = {}): Promise<PullRequestSummary[]> {
-  const { maxPages, ...rest } = params;
+  const { maxPages, since, ...rest } = params;
   return getGithubClient().paginateAll<PullRequestSummary>(
     "GET /repos/{owner}/{repo}/pulls",
-    { owner, repo, state: "all", ...rest },
+    { owner, repo, state: "all", ...(since ? { since } : {}), ...rest },
     { ttlSeconds: TTL.pulls, maxPages },
   );
 }
 
 export interface ListIssuesParams {
   state?: "open" | "closed" | "all";
+  since?: string;
   maxPages?: number;
 }
 
 export function listIssues(owner: string, repo: string, params: ListIssuesParams = {}): Promise<IssueSummary[]> {
-  const { maxPages, ...rest } = params;
+  const { maxPages, since, ...rest } = params;
   return getGithubClient().paginateAll<IssueSummary>(
     "GET /repos/{owner}/{repo}/issues",
-    { owner, repo, state: "all", ...rest },
+    { owner, repo, state: "all", ...(since ? { since } : {}), ...rest },
     { ttlSeconds: TTL.issues, maxPages },
   );
 }

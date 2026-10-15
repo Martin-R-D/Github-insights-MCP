@@ -42,7 +42,7 @@ async function call(args: Record<string, unknown>) {
   const parsed = tool.inputSchema.parse(args);
   return (await tool.handler(parsed)) as {
     data: {
-      repos: { name: string; stars: number; commits_in_period: number; commits_per_month: number }[];
+      repos: { name: string; stars: number; commits_in_period: number; commits_per_month_lifetime: number }[];
       winners: { most_stars: { repo: string }; most_active: { repo: string } };
       head_to_head: { metric: string; leader: string; margin_percent: number | null }[];
       verdict: string;
@@ -80,7 +80,7 @@ describe("comparison", () => {
     const music = res.data.repos.find((r) => r.name === "octocat/musicflow")!;
     const key = res.data.repos.find((r) => r.name === "octocat/keystrike")!;
     // Fairness: musicflow's commits/month should beat keystrike's despite fewer total.
-    expect(music.commits_per_month).toBeGreaterThan(key.commits_per_month);
+    expect(music.commits_per_month_lifetime).toBeGreaterThan(key.commits_per_month_lifetime);
     expect(res.data.verdict).toMatch(/bigger project.*live one/);
 
     const starsH2H = res.data.head_to_head.find((h) => h.metric === "stars")!;

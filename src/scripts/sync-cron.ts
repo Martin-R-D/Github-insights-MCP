@@ -9,7 +9,7 @@
  *   node dist/scripts/sync-cron.js            # incremental daily sync + snapshot
  *   node dist/scripts/sync-cron.js --full     # 365-day backfill + snapshot
  */
-import { snapshotToday, syncAll } from "../services/sync.js";
+import { syncAll } from "../services/sync.js";
 import { closeDb } from "../db/client.js";
 import { logger, redactSecret } from "../utils/logger.js";
 import { loadConfig } from "../config.js";
@@ -22,18 +22,15 @@ async function main(): Promise<void> {
   logger.info("Scheduled sync starting", { full });
 
   const report = await syncAll({ full });
-  // syncAll already snapshots at the end, but call it explicitly so this entry
-  // guarantees a snapshot even if the shape of syncAll changes later.
-  const repos = snapshotToday();
 
   logger.info("Scheduled sync complete", {
     reposSynced: report.reposSynced,
     commitsAdded: report.commitsAdded,
     starsAdded: report.starsAdded,
-    snapshotRepos: repos,
+    snapshotRepos: report.snapshotRepos,
     errors: report.errors.length,
   });
-  process.stderr.write(JSON.stringify({ ...report, snapshotRepos: repos }, null, 2) + "\n");
+  process.stderr.write(JSON.stringify(report, null, 2) + "\n");
 
   closeDb();
   // Use exitCode + natural drain rather than process.exit() to avoid a libuv

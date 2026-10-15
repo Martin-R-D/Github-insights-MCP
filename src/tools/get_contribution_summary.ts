@@ -4,6 +4,7 @@ import { db } from "../db/client.js";
 import { loadConfig } from "../config.js";
 import { getContributionCalendar, type ContributionDay } from "../github/graphql.js";
 import { ToolError } from "../utils/errors.js";
+import { logger } from "../utils/logger.js";
 import {
   addDays,
   dayDiff,
@@ -195,8 +196,11 @@ export const getContributionSummaryTool = defineTool({
     let calendarAvailable = true;
     try {
       calendar = await calendarFetcher(username, calStart, endIso);
-    } catch {
+    } catch (err) {
       calendarAvailable = false;
+      logger.warn("Contribution calendar unavailable; falling back to commit counts", {
+        err: err instanceof Error ? err.message : String(err),
+      });
     }
     const calByDate = new Map(calendar.map((d) => [d.date, d.count]));
     const sumCal = (from: string, to: string): number => {
