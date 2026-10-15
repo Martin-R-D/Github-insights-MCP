@@ -1,6 +1,6 @@
 {
   "name": "github-insights-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server exposing GitHub activity insights over stdio",
   "type": "module",
   "engines": {
