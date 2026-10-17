@@ -249,6 +249,43 @@ npm run lint       # eslint
 CI (`.github/workflows/ci.yml`) runs typecheck, lint, tests and build on Node 20
 and 22 for every push and PR.
 
+### Release packaging and Agensi submission
+
+Run the checks before preparing a release:
+
+```bash
+npm ci
+npm run typecheck
+npm run lint
+npm test
+npm audit
+npm pack --dry-run
+```
+
+`npm pack` and `npm publish` automatically build the current source through
+`prepack`. The package includes both SQLite schema files and the Agensi skill
+folder, `github-insights-mcp/` (its `SKILL.md` and README). The MCP server and
+GitHub API user agents derive their version from `package.json`.
+
+After inspecting and testing the packed artifact, publish with your npm account:
+
+```bash
+npm login
+npm publish
+```
+
+For an Agensi submission, provide the repository URL and the skill path
+`github-insights-mcp/SKILL.md`, or the included skill folder if an upload is
+requested. Confirm Agensi supports local stdio MCP servers, Node.js, and the
+native `better-sqlite3` dependency; this project does not expose an HTTP MCP
+endpoint. Use `npx -y github-insights-mcp@<published-version>` to launch the
+released version. Each user supplies their own read-only `GITHUB_TOKEN` and
+`GITHUB_USERNAME` securely. Set an absolute writable `DB_PATH` so the cache
+survives changes in the host's working directory. Verify a clean installation,
+MCP initialization, all 12 tools, and a data request after the first sync before
+making a listing public. Agensi's submission requirements must be checked in
+its current invitation or publisher documentation.
+
 ### Project layout
 
 ```

@@ -1,3 +1,4 @@
+import { USER_AGENT } from "../version.js";
 import { createHash } from "node:crypto";
 import { Octokit } from "@octokit/rest";
 import { loadConfig } from "../config.js";
@@ -15,7 +16,6 @@ import { logger } from "../utils/logger.js";
  *  - Link-header pagination that caches each page independently.
  */
 
-const USER_AGENT = "github-insights-mcp/0.1.0";
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 500;
 const MAX_BACKOFF_MS = 20_000;
