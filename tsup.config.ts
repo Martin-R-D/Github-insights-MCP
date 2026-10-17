@@ -1,5 +1,7 @@
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync } from "node:fs";
 import { defineConfig } from "tsup";
+
+const { version } = JSON.parse(readFileSync("package.json", "utf8")) as { version: string };
 
 export default defineConfig({
   entry: ["src/index.ts", "src/scripts/sync-cron.ts"],
@@ -11,6 +13,7 @@ export default defineConfig({
   sourcemap: true,
   dts: false,
   splitting: false,
+  define: { __APP_VERSION__: JSON.stringify(version) },
   // better-sqlite3 ships a native binding; keep it external so the prebuilt
   // .node file is required from node_modules at runtime rather than bundled.
   external: ["better-sqlite3"],

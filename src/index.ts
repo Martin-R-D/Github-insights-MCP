@@ -16,8 +16,10 @@ import { closeDb } from "./db/client.js";
 import { overScopedWarning, TokenVerificationError, verifyToken } from "./github/verify.js";
 import { firstRunActive, startInitialSyncIfEmpty, stillSyncingResponse } from "./services/bootstrap.js";
 
+declare const __APP_VERSION__: string;
+
 const SERVER_NAME = "github-insights";
-const SERVER_VERSION = "0.1.0";
+const SERVER_VERSION = __APP_VERSION__;
 
 /**
  * Convert a tool's zod input schema into a JSON Schema object suitable for the

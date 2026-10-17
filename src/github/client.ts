@@ -15,7 +15,8 @@ import { logger } from "../utils/logger.js";
  *  - Link-header pagination that caches each page independently.
  */
 
-const USER_AGENT = "github-insights-mcp/0.1.0";
+declare const __APP_VERSION__: string;
+const USER_AGENT = `github-insights-mcp/${__APP_VERSION__}`;
 const MAX_RETRIES = 3;
 const BASE_BACKOFF_MS = 500;
 const MAX_BACKOFF_MS = 20_000;
