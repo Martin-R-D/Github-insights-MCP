@@ -95,7 +95,7 @@ the working directory):
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GITHUB_TOKEN` | Yes | Read-only fine-grained token with Contents, Metadata, Issues, and Pull requests access; see the project README for optional Profile access. |
+| `GITHUB_TOKEN` | Yes | Personal access token with `repo` and `read:user` scopes. |
 | `GITHUB_USERNAME` | Yes | Your GitHub username (e.g. `octocat`). |
 | `TIMEZONE` | No | IANA timezone string (default `UTC`). E.g. `America/New_York`. |
 | `DB_PATH` | No | Path to the SQLite database file (default `./data/github.db`). |

@@ -1,4 +1,3 @@
-import { USER_AGENT } from "../version.js";
 import { graphql } from "@octokit/graphql";
 import { loadConfig } from "../config.js";
 import { ToolError } from "../utils/errors.js";
@@ -10,6 +9,7 @@ import { ToolError } from "../utils/errors.js";
  * date-ascending array.
  */
 
+const USER_AGENT = "github-insights-mcp/0.1.0";
 
 export interface ContributionDay {
   date: string;

@@ -9,7 +9,6 @@ import {
 import { zodToJsonSchema } from "zod-to-json-schema";
 
 import { loadConfig } from "./config.js";
-import { VERSION } from "./version.js";
 import { tools, toolsByName } from "./tools/index.js";
 import { toToolResult, ToolError } from "./utils/errors.js";
 import { logger, redactSecret } from "./utils/logger.js";
@@ -18,6 +17,7 @@ import { overScopedWarning, TokenVerificationError, verifyToken } from "./github
 import { firstRunActive, startInitialSyncIfEmpty, stillSyncingResponse } from "./services/bootstrap.js";
 
 const SERVER_NAME = "github-insights";
+const SERVER_VERSION = "0.1.0";
 
 /**
  * Convert a tool's zod input schema into a JSON Schema object suitable for the
@@ -85,7 +85,7 @@ async function main(): Promise<void> {
   startInitialSyncIfEmpty();
 
   const server = new Server(
-    { name: SERVER_NAME, version: VERSION },
+    { name: SERVER_NAME, version: SERVER_VERSION },
     { capabilities: { tools: {} } },
   );
 
@@ -136,7 +136,7 @@ async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
 
-  logger.info(`${SERVER_NAME} v${VERSION} ready on stdio`, {
+  logger.info(`${SERVER_NAME} v${SERVER_VERSION} ready on stdio`, {
     tools: tools.map((t) => t.name),
   });
 
