@@ -9,8 +9,8 @@ import { ToolError } from "../utils/errors.js";
  * date-ascending array.
  */
 
-declare const __APP_VERSION__: string;
-const USER_AGENT = `github-insights-mcp/${__APP_VERSION__}`;
+import { VERSION } from "../version.js";
+const USER_AGENT = `github-insights-mcp/${VERSION}`;
 
 export interface ContributionDay {
   date: string;
